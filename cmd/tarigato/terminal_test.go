@@ -28,7 +28,7 @@ func TestTerminal(t *testing.T) {
 		u.Event(game.Event{Stage: "repair", Kind: "done", Outcome: "completed"})
 		u.Finish(game.Result{Status: "needs_review", Reason: "test skipped\r\x1b]52;c;unsafe\a", Directory: "/tmp/run", Artifacts: map[string]string{"changes.patch": "hash"}})
 		text := output.String()
-		for _, want := range []string{"T A R I G A T O", "TMLS.NYC", "BUILDER", "CHALLENGER", "Candidate ready for checks", "One test submitted", "One repair prepared", "CHALLENGE 1", "assertion failed", "NEEDS REVIEW", "report.md", "changes.patch + tests.patch", `\u001b[2J\u000a`, `\u000d\u001b]52;c;unsafe\u0007`} {
+		for _, want := range []string{"T A R I G A T O", "BUILDER", "CHALLENGER", "Candidate ready for checks", "One test submitted", "One repair prepared", "CHALLENGE 1", "assertion failed", "NEEDS REVIEW", "report.md", "changes.patch + tests.patch", `\u001b[2J\u000a`, `\u000d\u001b]52;c;unsafe\u0007`} {
 			if !strings.Contains(text, want) {
 				t.Errorf("color=%t: missing %q in %q", color, want, text)
 			}

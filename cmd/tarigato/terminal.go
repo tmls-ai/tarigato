@@ -60,7 +60,7 @@ func (u *terminal) paint(color, text string) string {
 }
 
 func (u *terminal) Start(task, builder, challenger string) {
-	fmt.Fprintf(u.progress, "\n  %s  %s\n  One builds. One challenges. Tests settle it.\n\n", u.paint(violet, "T A R I G A T O"), u.paint(dim, "/ TMLS.NYC"))
+	fmt.Fprintf(u.progress, "\n  %s\n  One builds. One challenges. Tests settle it.\n\n", u.paint(violet, "T A R I G A T O"))
 	fmt.Fprintf(u.progress, "  TASK  %s\n\n", shortText(task, 68))
 	fmt.Fprintf(u.progress, "  %s %s  /  %s %s  /  1 repair max\n  %s\n", u.paint(teal, "BUILDER"), cleanText(builder), u.paint(amber, "CHALLENGER"), cleanText(challenger), u.paint(dim, strings.Repeat("-", 70)))
 	if u.color {

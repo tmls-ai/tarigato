@@ -25,7 +25,7 @@ func run(args []string, out, stderr io.Writer) int {
 	timeout := flags.Duration("timeout", 30*time.Minute, "total execution deadline")
 	showVersion := flags.Bool("version", false, "print version")
 	flags.Usage = func() {
-		fmt.Fprint(stderr, "TARIGATO / TMLS.NYC\n\nOne builds. One challenges. Tests settle the challenge.\n\nUsage: tarigato [options] \"task\"\n\nExample:\n  tarigato \"Reject tokens at their exact expiry time\"\n\nRun inside a clean, committed Go repository.\nOptions must come before the task.\n\n")
+		fmt.Fprint(stderr, "TARIGATO\n\nOne builds. One challenges. Tests settle the challenge.\n\nUsage: tarigato [options] \"task\"\n\nExample:\n  tarigato \"Reject tokens at their exact expiry time\"\n\nRun inside a clean, committed Go repository.\nOptions must come before the task.\n\n")
 		flags.PrintDefaults()
 	}
 	if err := flags.Parse(args); err != nil {
