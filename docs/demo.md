@@ -28,9 +28,20 @@ Open the printed `report.md`, check the source diff and the challenger's expecta
 
 ## Recording
 
-[Watch the 24-second video](assets/terminal-demo.mp4) or inspect the [original terminal capture](assets/terminal-demo.cast). The [animated preview](assets/terminal-demo.gif) is embedded in the README. **Actual CLI output; playback accelerated.** The 91.023-second run plays at approximately 4.8× speed, with a final hold.
+[Watch the 24-second video](assets/terminal-demo.mp4) or inspect the [original terminal transcript](assets/terminal-demo.cast). The [animated preview](assets/terminal-demo.gif) is embedded in the README. **Rendered from actual CLI output; not a screen recording.** The 91.023-second run plays at approximately 4.8× speed, with a final hold.
 
 Recorded on 2026-10-01 with Codex CLI 0.159.2 and Go 1.27.1 on macOS arm64. The builder changed `>=` to `>`. The challenger submitted one test; both challenge runs and the final checks passed. No repair was needed.
+
+### Record the live terminal on macOS
+
+Prepare the example above, stopping before the final Tarigato command. Clear the terminal and size it to fit the output (96 columns by 32 rows works well).
+
+1. Press **Shift–Command–5**, choose **Record Selected Portion**, and frame only the terminal.
+2. Under **Options**, set **Microphone: None**, choose a save location, and start recording.
+3. Run the final Tarigato command. Keep recording through its final result.
+4. Press **Control–Command–Escape** to stop. Review the saved `.mov` before sharing it.
+
+That file is a normal-speed screen recording of a live run. Keep the original `.mov` unchanged for the raw recording. Its duration and result depend on the actual agents; the renderer below is a separate presentation format.
 
 ### Render the existing capture
 

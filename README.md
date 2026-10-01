@@ -8,7 +8,7 @@ A small Go tool by **[TMLS.NYC](https://tmls.nyc)** that puts two coding agents 
 
 [![Tarigato terminal demo](docs/assets/terminal-demo.gif)](docs/assets/terminal-demo.mp4)
 
-*Actual CLI output; playback accelerated.*
+*Rendered from actual CLI output; playback accelerated. Not a screen recording.*
 
 [Watch the video](docs/assets/terminal-demo.mp4) · [Run the example](docs/demo.md)
 
