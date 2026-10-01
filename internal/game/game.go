@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -19,7 +18,13 @@ type Options struct {
 	Repo, Task, OutputDir       string
 	BuilderName, ChallengerName string
 	Builder, Challenger         AgentFunc
-	Progress                    io.Writer
+	Progress                    func(Event)
+}
+
+// Event reports observations to the terminal without letting presentation
+// affect the controller's decisions. Each started stage gets one done event.
+type Event struct {
+	Stage, Kind, Outcome, Detail string
 }
 
 type Observation struct {
@@ -179,23 +184,58 @@ func Run(ctx context.Context, opts Options) (r Result, err error) {
 		r.Artifacts[name] = digest(p)
 		return nil
 	}
-	check := func(stage, dir string, want *challenge, original []testID) (checkResult, error) {
+	emit := func(event Event) {
 		if opts.Progress != nil {
-			fmt.Fprintln(opts.Progress, stage)
+			opts.Progress(event)
 		}
+	}
+	check := func(stage, dir string, want *challenge, original []testID) (checkResult, error) {
+		emit(Event{Stage: stage, Kind: "start"})
 		result, e := checkWorkspace(ctx, dir, want, original)
 		r.Observations = append(r.Observations, Observation{stage, result})
 		path := "logs/" + stage + ".jsonl"
 		if writeErr := savePatch(path, result.Output); writeErr != nil {
-			return result, writeErr
+			e = errors.Join(e, writeErr)
 		}
+		outcome, detail := result.Expected, result.Reason
+		if outcome == "" {
+			if result.Passed {
+				outcome = "pass"
+			} else {
+				outcome = "fail"
+			}
+		}
+		if detail == "" {
+			detail = fmt.Sprintf("%d tests passed", len(result.Tests))
+			if len(result.Tests) == 1 {
+				detail = "1 test passed"
+			}
+		}
+		if result.Expected == "fail" {
+			detail = "Challenge failed; original tests passed"
+		}
+		if e != nil {
+			outcome, detail = "error", e.Error()
+		}
+		if e == nil && stage == "baseline" && result.Passed && len(result.Tests) == 0 {
+			outcome, detail = "blocked", "No named baseline tests ran"
+		}
+		emit(Event{Stage: stage, Kind: "done", Outcome: outcome, Detail: detail})
 		return result, e
 	}
-	move := func(actor AgentFunc, role, dir, evidence string) (AgentResponse, error) {
-		if opts.Progress != nil {
-			fmt.Fprintln(opts.Progress, role)
-		}
-		response, e := actor(ctx, AgentRequest{role, dir, opts.Task, evidence})
+	move := func(actor AgentFunc, role, dir, evidence string) (response AgentResponse, e error) {
+		emit(Event{Stage: role, Kind: "start"})
+		defer func() {
+			outcome, detail := response.Status, ""
+			if response.Status == "blocked" {
+				detail = response.Summary
+			}
+			if e != nil {
+				outcome, detail = "error", e.Error()
+			}
+			emit(Event{Stage: role, Kind: "done", Outcome: outcome, Detail: detail})
+		}()
+		response, e = actor(ctx, AgentRequest{role, dir, opts.Task, evidence})
 		if e != nil {
 			var exit *exec.ExitError
 			var invocation *exec.Error

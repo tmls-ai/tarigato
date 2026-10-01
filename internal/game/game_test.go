@@ -111,7 +111,20 @@ func TestGame(t *testing.T) {
 			}
 			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 			defer cancel()
-			r, runErr := Run(ctx, Options{Repo: repo, Task: "Reject expired sessions", OutputDir: t.TempDir(), BuilderName: "fake", ChallengerName: "fake", Builder: builder, Challenger: challenger})
+			var events []Event
+			r, runErr := Run(ctx, Options{Repo: repo, Task: "Reject expired sessions", OutputDir: t.TempDir(), BuilderName: "fake", ChallengerName: "fake", Builder: builder, Challenger: challenger, Progress: func(event Event) { events = append(events, event) }})
+			if len(events)%2 != 0 {
+				t.Fatal("stage missing completion event")
+			}
+			for i := 0; i < len(events); i += 2 {
+				start, done := events[i], events[i+1]
+				if start.Kind != "start" || done.Kind != "done" || start.Stage != done.Stage || done.Outcome == "" {
+					t.Fatalf("inconsistent stage events: %+v", events[i:i+2])
+				}
+				if tc.repair && done.Stage == "challenge-1" && done.Outcome != "fail" {
+					t.Fatal("terminal hid reproduced failure")
+				}
+			}
 			if r.Status != tc.status || r.RepairAttempted != tc.repair {
 				t.Fatalf("status=%s repair=%t reason=%s err=%v", r.Status, r.RepairAttempted, r.Reason, runErr)
 			}
@@ -202,5 +215,24 @@ func TestRunGuardsAndCancellation(t *testing.T) {
 	partial, err := os.ReadFile(filepath.Join(r.Directory, "workspaces", "builder", "session.go"))
 	if err != nil || string(partial) != buggySource {
 		t.Fatal("lost interrupted work", err)
+	}
+}
+
+func TestEmptyBaselineEvent(t *testing.T) {
+	repo := fixtureRepo(t)
+	if err := os.Remove(filepath.Join(repo, "session_test.go")); err != nil {
+		t.Fatal(err)
+	}
+	if out, err := git(context.Background(), repo, "-c", "user.name=Tarigato Test", "-c", "user.email=test@example.invalid", "commit", "-qam", "Remove test for baseline guard"); err != nil {
+		t.Fatalf("commit: %s %v", out, err)
+	}
+	var events []Event
+	actor := func(context.Context, AgentRequest) (AgentResponse, error) {
+		t.Fatal("agent started without a baseline")
+		return AgentResponse{}, nil
+	}
+	result, err := Run(context.Background(), Options{Repo: repo, Task: "task", OutputDir: t.TempDir(), Builder: actor, Challenger: actor, Progress: func(event Event) { events = append(events, event) }})
+	if err != nil || result.Status != "blocked" || len(events) != 2 || events[1].Outcome != "blocked" {
+		t.Fatalf("misleading baseline: %+v %+v %v", result, events, err)
 	}
 }

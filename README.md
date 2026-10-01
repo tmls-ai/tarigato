@@ -6,6 +6,12 @@ A small Go tool by **[TMLS.NYC](https://tmls.nyc)** that puts two coding agents 
 
 > **Experimental.** Go repositories only. Review every result before applying it. Codex has passed a macOS smoke test; Claude has not been tested live.
 
+[![Tarigato terminal demo](docs/assets/terminal-demo.gif)](docs/assets/terminal-demo.mp4)
+
+*Actual CLI output; playback accelerated.*
+
+[Watch the video](docs/assets/terminal-demo.mp4) · [Run the example](docs/demo.md)
+
 ## The game
 
 ```mermaid
@@ -50,7 +56,17 @@ tarigato --builder codex --challenger claude "Fix the session expiry boundary"
 
 The default is two separate Codex sessions. Use `--builder` and `--challenger` to choose `codex` or `claude`. `--timeout 30m` sets the total deadline; `--version` prints the binary version. Options come before the task. Tests run with `go test -json -count=1 ./...`; no configuration file is needed.
 
+The terminal shows each move and its elapsed time. Piped output stays plain; set `NO_COLOR=1` to disable terminal styling.
+
 Tarigato runs in separate workspaces and writes patches, test evidence, and a report under `~/.tarigato/runs/<id>/` for you to review and apply. It does not merge or push changes.
+
+## A boundary your tests missed
+
+Your session check uses `expiresAt >= now`. Tests cover yesterday and tomorrow, but miss the exact expiry time: the session stays valid one instant too long.
+
+Give Tarigato the rule: **“Reject sessions when expiry is at or before now.”** The builder changes the implementation; a separate challenger tries to expose a mistake with an executable test. You get the source diff, the admitted test, and the recorded results to review.
+
+The [runnable session expiry example](docs/demo.md) starts with that bug and a passing test suite.
 
 ## Scope
 

@@ -25,7 +25,7 @@ func run(args []string, out, stderr io.Writer) int {
 	timeout := flags.Duration("timeout", 30*time.Minute, "total execution deadline")
 	showVersion := flags.Bool("version", false, "print version")
 	flags.Usage = func() {
-		fmt.Fprintln(stderr, "Usage: tarigato [options] \"task\"\n\nOne builds. One challenges. Tests settle the challenge.\nOptions must come before the task.")
+		fmt.Fprint(stderr, "TARIGATO / TMLS.NYC\n\nOne builds. One challenges. Tests settle the challenge.\n\nUsage: tarigato [options] \"task\"\n\nExample:\n  tarigato \"Reject tokens at their exact expiry time\"\n\nRun inside a clean, committed Go repository.\nOptions must come before the task.\n\n")
 		flags.PrintDefaults()
 	}
 	if err := flags.Parse(args); err != nil {
@@ -57,13 +57,12 @@ func run(args []string, out, stderr io.Writer) int {
 	defer stop()
 	ctx, cancel := context.WithTimeout(signals, *timeout)
 	defer cancel()
-	result, err := game.Run(ctx, game.Options{Repo: cwd, Task: flags.Arg(0), BuilderName: *builder, ChallengerName: *challenger, Progress: stderr})
-	fmt.Fprintln(out, result.Status+": "+result.Reason)
-	if result.Directory != "" {
-		fmt.Fprintln(out, "Results:", result.Directory)
+	ui := newTerminal(out, stderr, terminalColor(out, stderr))
+	ui.Start(flags.Arg(0), *builder, *challenger)
+	result, err := game.Run(ctx, game.Options{Repo: cwd, Task: flags.Arg(0), BuilderName: *builder, ChallengerName: *challenger, Progress: ui.Event})
+	if err != nil && result.Reason == "" {
+		result.Reason = err.Error()
 	}
-	if err != nil && result.Directory == "" {
-		fmt.Fprintln(stderr, err)
-	}
+	ui.Finish(result)
 	return result.ExitCode()
 }
