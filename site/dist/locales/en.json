@@ -190,7 +190,7 @@
   "gameReview": "You review the requirement, test expectation, and patches.",
   "gameEvidence": "Passing tests do not prove correctness.",
   "gameBrowse": "Read the full rules",
-  "gameOpenNote": "Source and rules are available on GitHub. A license has not been chosen yet.",
+  "gameOpenNote": "Source and rules are available on GitHub under AGPL-3.0-only.",
   "gameControls": "Select a role to follow its move in the simulated run.",
   "gameCurrent": "Current step",
   "gameDiagram": "Builder and challenger exchange a patch and a test through the Go controller.",

@@ -1,7 +1,5 @@
 # Tarigato
 
-[ウェブサイト](https://tarigato.vercel.app)
-
 [English](README.md) · **日本語** · [简体中文](README.zh-CN.md) · [Deutsch](README.de.md)
 
 Tarigato は Go プロジェクト向けの CLI ツールです。2 つのエージェントが、コードの変更とバグを探すテストの作成を分担します。検証は Tarigato が実行します。実装後の追加の修正は最大 1 回で、結果をレビュー用のパッチとして保存します。
@@ -107,4 +105,6 @@ Tarigato は別の作業領域を使います。手元のチェックアウト�
 
 README は 4 言語で読めます。ターミナルの出力と詳細ドキュメントは、現在英語のみです。
 
-開発：[TMLS.NYC](https://tmls.nyc)。ライセンスはまだ決まっていません。
+Copyright (C) 2026 [TMLS.NYC](https://tmls.nyc) and contributors.
+
+Tarigato は [GNU Affero General Public License v3.0](LICENSE) のバージョン 3 のみに基づいて提供されます（`AGPL-3.0-only`）。

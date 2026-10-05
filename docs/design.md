@@ -67,7 +67,7 @@ tarigato [--builder codex|claude] [--challenger codex|claude] [--timeout 30m] "t
 
 Options precede the task. Defaults are separate Codex sessions and a 30-minute total deadline. The deadline bounds execution; it is not a money cap. Commands have an 8 MiB output limit. Checks use `go test -json -count=1 ./...`. Go may fetch project dependencies according to the local environment. `tarigato --version` prints the binary version.
 
-Provider adapters are experimental; see the recorded smoke-test coverage below. Controller tests substitute fake agents and require no provider credentials. Adapters preserve provider permission controls and supply a temporary Go build cache. Provider command failures stop as `blocked`; malformed structured responses stop as `error`.
+Provider adapters are experimental; see the recorded smoke-test coverage below. Controller tests substitute fake agents and require no provider credentials. Codex runs with `--sandbox workspace-write`; Claude runs with `--permission-mode default`. Both receive a temporary Go build cache. Provider command failures stop as `blocked`; malformed structured responses stop as `error`.
 
 ## Workspaces and tests
 
@@ -114,4 +114,4 @@ Run `go test -race ./...`, `go vet ./...`, and `go build ./cmd/tarigato`. Determ
 
 On 2026-10-01, Codex CLI 0.159.2 with Go 1.27.1 on macOS arm64 completed a synthetic expiry-boundary task as `ready_for_review`: source edit, submitted challenge, two passing challenge runs, and passing final checks. No repair was needed in that live run; deterministic tests cover the repair path. Claude has adapter tests but has not been tested live. This is smoke coverage, not a general reliability claim.
 
-Before a public release: broaden provider coverage, choose the license and rights-holder notice, establish a monitored private security-reporting route, and verify the README from a clean checkout. The README is available in English, Japanese, Simplified Chinese, and German; terminal output and detailed documentation remain in English. Add runners or platforms when a real use case requires them.
+Tarigato is licensed under [AGPL-3.0-only](../LICENSE). Before a supported release, broaden provider coverage and verify the README from a clean checkout. See [Security](../SECURITY.md) for private vulnerability reporting. The README is available in English, Japanese, Simplified Chinese, and German; terminal output and detailed documentation remain in English. Add runners or platforms when a real use case requires them.

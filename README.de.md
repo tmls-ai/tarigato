@@ -1,7 +1,5 @@
 # Tarigato
 
-[Website](https://tarigato.vercel.app)
-
 [English](README.md) · [日本語](README.ja.md) · [简体中文](README.zh-CN.md) · **Deutsch**
 
 Tarigato lässt zwei Coding-Agenten an einem Go-Projekt arbeiten. Einer ändert den Code. Der andere versucht, mit einem Test einen Fehler zu finden. Tarigato führt die Prüfungen aus, erlaubt höchstens eine Korrektur und speichert Patches, die du anschließend prüfen kannst.
@@ -107,4 +105,6 @@ Tarigato verwendet separate Arbeitsverzeichnisse. Es wendet keine Patches auf de
 
 Die README ist in vier Sprachen verfügbar. Terminalausgabe und ausführliche Dokumentation sind derzeit auf Englisch.
 
-Entwickelt von [TMLS.NYC](https://tmls.nyc). Die Lizenz steht noch nicht fest.
+Copyright (C) 2026 [TMLS.NYC](https://tmls.nyc) and contributors.
+
+Tarigato steht unter der [GNU Affero General Public License v3.0](LICENSE), ausschließlich Version 3 (`AGPL-3.0-only`).

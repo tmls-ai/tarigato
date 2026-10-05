@@ -105,4 +105,6 @@ Tarigato verwendet separate Arbeitsverzeichnisse. Es wendet keine Patches auf de
 
 Die README ist in vier Sprachen verfügbar. Terminalausgabe und ausführliche Dokumentation sind derzeit auf Englisch.
 
-Entwickelt von [TMLS.NYC](https://tmls.nyc). Die Lizenz steht noch nicht fest.
+Copyright (C) 2026 [TMLS.NYC](https://tmls.nyc) and contributors.
+
+Tarigato steht unter der [GNU Affero General Public License v3.0](LICENSE), ausschließlich Version 3 (`AGPL-3.0-only`).

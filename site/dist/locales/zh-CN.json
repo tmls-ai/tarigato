@@ -190,7 +190,7 @@
   "gameReview": "由你审查需求、测试预期和补丁。",
   "gameEvidence": "测试通过并不证明代码正确。",
   "gameBrowse": "阅读完整规则",
-  "gameOpenNote": "源代码和规则已在 GitHub 公开。尚未选定许可证。",
+  "gameOpenNote": "源代码和规则以 AGPL-3.0-only 许可证在 GitHub 公开。",
   "gameControls": "选择角色，查看其在模拟运行中的行动。",
   "gameCurrent": "当前步骤",
   "gameDiagram": "构建者和挑战者通过 Go 控制器交换补丁和测试。",

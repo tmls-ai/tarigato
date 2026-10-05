@@ -1,7 +1,5 @@
 # Tarigato website
 
-[Live website](https://tarigato.vercel.app)
-
 Static HTML, CSS, and JavaScript. The homepage has a three-step interactive example; the demo page has the full workflow simulation. Neither runs agents or executes terminal commands.
 
 The interface and quickstart are available in English, Japanese, Simplified Chinese, and German. Detailed articles are in English.
@@ -27,9 +25,9 @@ python3 site/scripts/check.py
 
 ## Deploy
 
-Vercel uses the repository root and serves `site/dist`, as configured in `vercel.json`. The framework is Other, with no install or build command. The connected GitHub repository deploys `main` to production.
+The website is deployed from a separate private checkout. The public repository is disconnected from Vercel. Its Git pushes do not deploy the site.
 
-To deploy from a linked local checkout:
+From the linked private website checkout:
 
 ```sh
 vercel deploy --prod

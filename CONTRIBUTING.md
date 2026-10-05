@@ -19,6 +19,6 @@ Tests use fake agent processes and temporary Go repositories; no model credentia
 - Use plain descriptions and runnable examples. Avoid slogans and claims the implementation cannot support.
 - Keep the [English](README.md), [Japanese](README.ja.md), [Simplified Chinese](README.zh-CN.md), and [German](README.de.md) READMEs aligned when usage or limits change. Use English as the source; preserve commands, flags, file names, and status strings in translations. Have a fluent reviewer check changes to translated prose.
 
-Discuss changes to the two-role game or one-repair rule before implementing them. License selection and contribution terms must be finalized before the public release; no license has been granted by these docs.
+Discuss changes to the two-role game or one-repair rule before implementing them. Contributions are licensed under the same [AGPL-3.0-only](LICENSE) license as Tarigato. Submit only work you have the right to contribute.
 
 See [SECURITY.md](SECURITY.md) for current reporting limits.

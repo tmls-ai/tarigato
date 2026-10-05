@@ -14,6 +14,7 @@ repo = Path(sys.argv[1]).resolve()
 site = Path(__file__).resolve().parents[1] / 'dist'
 (site / 'content').mkdir(exist_ok=True)
 (site / 'downloads').mkdir(exist_ok=True)
+shutil.copy2(repo / 'LICENSE', site / 'downloads' / 'LICENSE')
 renderer = MarkdownIt('commonmark', {'html': False}).enable('table')
 
 # These diagrams mirror the repository's Mermaid diagrams. HTML keeps them

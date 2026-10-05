@@ -105,4 +105,6 @@ Tarigato 使用独立的工作目录，不会把补丁应用到你的本地检�
 
 README 提供四种语言版本。终端输出和详细文档目前为英文。
 
-由 [TMLS.NYC](https://tmls.nyc) 开发。尚未选定许可证。
+Copyright (C) 2026 [TMLS.NYC](https://tmls.nyc) and contributors.
+
+Tarigato 采用 [GNU Affero General Public License v3.0](LICENSE)，仅限第 3 版（`AGPL-3.0-only`）。

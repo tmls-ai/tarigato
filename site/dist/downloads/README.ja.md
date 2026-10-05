@@ -105,4 +105,6 @@ Tarigato は別の作業領域を使います。手元のチェックアウト�
 
 README は 4 言語で読めます。ターミナルの出力と詳細ドキュメントは、現在英語のみです。
 
-開発：[TMLS.NYC](https://tmls.nyc)。ライセンスはまだ決まっていません。
+Copyright (C) 2026 [TMLS.NYC](https://tmls.nyc) and contributors.
+
+Tarigato は [GNU Affero General Public License v3.0](LICENSE) のバージョン 3 のみに基づいて提供されます（`AGPL-3.0-only`）。

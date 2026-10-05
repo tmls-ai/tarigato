@@ -190,7 +190,7 @@
   "gameReview": "Du prüfst die Anforderung, die Testerwartung und die Patches.",
   "gameEvidence": "Bestandene Tests beweisen keine Korrektheit.",
   "gameBrowse": "Vollständige Regeln lesen",
-  "gameOpenNote": "Quellcode und Regeln sind auf GitHub verfügbar. Eine Lizenz wurde noch nicht gewählt.",
+  "gameOpenNote": "Quellcode und Regeln sind auf GitHub unter AGPL-3.0-only verfügbar.",
   "gameControls": "Wähle eine Rolle, um ihren Zug im simulierten Ablauf zu sehen.",
   "gameCurrent": "Aktueller Schritt",
   "gameDiagram": "Builder und Challenger tauschen über den Go-Controller einen Patch und einen Test aus.",

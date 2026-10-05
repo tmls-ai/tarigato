@@ -105,4 +105,6 @@ Tarigato uses separate workspaces. It does not apply patches to your checkout, m
 
 The README is available in four languages. Terminal output and detailed documentation are currently in English.
 
-Built by [TMLS.NYC](https://tmls.nyc). A license has not been chosen yet.
+Copyright (C) 2026 [TMLS.NYC](https://tmls.nyc) and contributors.
+
+Tarigato is licensed under the [GNU Affero General Public License v3.0](LICENSE), version 3 only (`AGPL-3.0-only`).
