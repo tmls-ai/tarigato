@@ -1,0 +1,48 @@
+<h1 id="session-expiry-demo">Session expiry demo</h1>
+<p>A small access-control change makes a useful example: a session must be rejected when its expiry is <strong>at or before</strong> the current time.</p>
+<p>The <a href="https://github.com/tmls-ai/tarigato/blob/main/examples/session-expiry/session.go">example</a> starts with <code>expiresAt &gt;= now</code>. Its existing tests cover the future and the past, so they pass while missing the equality boundary. The intended change is <code>expiresAt &gt; now</code>. A useful challenge tests <code>Valid(100, 100)</code> and expects <code>false</code>.</p>
+<p>Tarigato gives the builder the requirement and lets a separate challenger look for a counterexample. The controller runs the submitted test twice and preserves it for the final checks. A correct first patch needs no repair; a reproduced failure permits one repair. Real agents may choose a different test or report no finding.</p>
+<h2 id="run-it">Run it</h2>
+<p>From the Tarigato checkout, with Go, Git, and an authenticated Codex CLI available:</p>
+<pre><code class="language-sh">demo_dir=&quot;$(mktemp -d)&quot;
+go build -o &quot;$demo_dir/tarigato&quot; ./cmd/tarigato
+cp -R examples/session-expiry &quot;$demo_dir/session-expiry&quot;
+cd &quot;$demo_dir/session-expiry&quot;
+git init -q
+git add .
+git commit -qm &quot;Add session expiry example&quot;
+go test ./...
+&quot;$demo_dir/tarigato&quot; &quot;Reject sessions when expiry is at or before now&quot;
+</code></pre>
+<p>Copying the example into its own repository gives Tarigato a clean, committed root module. The run uses your configured provider account. Its patches and report are saved under <code>~/.tarigato/runs/</code>; your example checkout stays unchanged.</p>
+<p>Open the printed <code>report.md</code>, check the source diff and the challenger's expectation, then follow the report's replay commands in a fresh checkout. <code>ready_for_review</code> means the recorded checks passed; it does not establish complete coverage.</p>
+<h2 id="recording">Recording</h2>
+<p><a href="assets/terminal-demo.mp4">Watch the 24-second video</a> or inspect the <a href="assets/terminal-demo.cast">original terminal transcript</a>. The <a href="assets/terminal-demo.gif">animated preview</a> is embedded in the README. <strong>Rendered from actual CLI output; not a screen recording.</strong> The 91.023-second run plays at approximately 4.8× speed, with a final hold.</p>
+<p>Recorded on 2026-10-01 with Codex CLI 0.159.2 and Go 1.27.1 on macOS arm64. The builder changed <code>&gt;=</code> to <code>&gt;</code>. The challenger submitted one test; both challenge runs and the final checks passed. No repair was needed.</p>
+<h3 id="record-the-live-terminal-on-macos">Record the live terminal on macOS</h3>
+<p>Prepare the example above, stopping before the final Tarigato command. Clear the terminal and size it to fit the output (96 columns by 32 rows works well).</p>
+<ol>
+<li>Press <strong>Shift-Command-5</strong>, choose <strong>Record Selected Portion</strong>, and frame only the terminal.</li>
+<li>Under <strong>Options</strong>, set <strong>Microphone: None</strong>, choose a save location, and start recording.</li>
+<li>Run the final Tarigato command. Keep recording through its final result.</li>
+<li>Press <strong>Control-Command-Escape</strong> to stop. Review the saved <code>.mov</code> before sharing it.</li>
+</ol>
+<p>That file is a normal-speed screen recording of a live run. Keep the original <code>.mov</code> unchanged for the raw recording. Its duration and result depend on the actual agents; the renderer below is a separate presentation format.</p>
+<h3 id="render-the-existing-capture">Render the existing capture</h3>
+<p>From the Tarigato checkout on macOS, use Python 3, the bundled Menlo and Apple Symbols fonts, and Swift's native video encoder. This uses the saved capture and makes no provider calls:</p>
+<pre><code class="language-sh">render_dir=&quot;$(mktemp -d)&quot;
+python3 -m venv &quot;$render_dir/venv&quot;
+&quot;$render_dir/venv/bin/pip&quot; install Pillow pyte
+&quot;$render_dir/venv/bin/python&quot; scripts/demo/record.py render \
+  docs/assets/terminal-demo.cast --frames &quot;$render_dir/frames&quot; \
+  --output &quot;$render_dir/terminal-demo&quot;
+swift scripts/demo/encode.swift &quot;$render_dir/frames&quot; &quot;$render_dir/terminal-demo.mp4&quot; 10
+</code></pre>
+<p>The output directory contains the GIF, PNG, MP4, and source frames. The frame directory must be empty; the encoder refuses to overwrite an existing video.</p>
+<h3 id="capture-a-new-run">Capture a new run</h3>
+<p>Set up the example using the commands above, then return to the Tarigato checkout. Capture requires only Python's standard library on macOS or Linux; the Tarigato run uses your provider account:</p>
+<pre><code class="language-sh">python3 scripts/demo/record.py capture \
+  --cwd &quot;$demo_dir/session-expiry&quot; --output &quot;$demo_dir/new-demo.cast&quot; -- \
+  &quot;$demo_dir/tarigato&quot; --timeout 4m &quot;Reject sessions when expiry is at or before now&quot;
+</code></pre>
+<p>Review the new recording before sharing it, then render its <code>.cast</code> file with the commands above.</p>

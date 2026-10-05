@@ -1,0 +1,89 @@
+<p>Tarigato は小さな CLI ハーネスです。タスクを渡すと、一方のエージェントが実装し、もう一方が不具合を探します。パッチを確認するのはあなたです。</p>
+<p><strong>実験段階。</strong> macOS と Linux。</p>
+<h2 id="install">インストール</h2>
+<p>Go 1.27.1 以降、Git、認証済みの Codex CLI または Claude Code が必要です。いずれも <code>PATH</code> から実行できるようにしてください。</p>
+<pre><code class="language-sh">git clone https://github.com/tmls-ai/tarigato.git
+cd tarigato
+go build -o tarigato ./cmd/tarigato
+export PATH=&quot;$PWD:$PATH&quot;
+</code></pre>
+<p>最後の行で、現在のターミナルセッションの <code>PATH</code> に Tarigato を追加します。</p>
+<h2 id="usage">使い方</h2>
+<p>変更したいプロジェクトのディレクトリで実行します。</p>
+<pre><code class="language-sh">cd /path/to/your-project
+tarigato &quot;Reject sessions when expiry is at or before now&quot;
+</code></pre>
+<p>カレントディレクトリから対象の Git リポジトリを選びます。引用符内のテキストがタスクです。リポジトリにはコミットが必要で、未コミットの変更があってはいけません。また、ルートに <code>go.mod</code> があり、名前の付いたテストが少なくとも 1 件成功する必要があります。タスクを指定せずに <code>tarigato</code> を実行すると、ヘルプを表示します。</p>
+<p>デフォルトでは、両方のエージェントが別々の Codex セッションを使います。役割ごとに Codex または Claude を選べます。</p>
+<pre><code class="language-sh">tarigato --builder codex --challenger claude &quot;Fix the session expiry boundary&quot;
+</code></pre>
+<p>オプションはタスクより前に指定してください。<code>--timeout 30m</code> は実行全体の制限時間を設定します。デフォルトは 30 分です。<code>--help</code> でオプション一覧を表示し、<code>NO_COLOR=1</code> でターミナルの色を無効にできます。</p>
+<h2 id="how-it-works">仕組み</h2>
+<table>
+<thead>
+<tr>
+<th>役割</th>
+<th>作業</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>エージェント 1：Builder</td>
+<td>既存のテストを変更せずに、Go の実装コードを変更する。</td>
+</tr>
+<tr>
+<td>エージェント 2：Challenger</td>
+<td>バグの可能性を検証するテストを 1 つ提出するか、問題が見つからなかったと報告する。</td>
+</tr>
+</tbody>
+</table>
+<figure class="doc-diagram"><div class="doc-flow"><div class="doc-node">初期確認</div><div class="doc-node">実装担当</div><div class="doc-node">変更案のチェック</div><div class="doc-node">検証担当</div><div class="doc-node">2回検証</div></div><div class="doc-branches"><div>成功、または指摘なし → 最終チェック</div><div>失敗が再現 → 修正は1回だけ</div><div>無効または不安定：停止して確認</div></div><div class="doc-flow"><div class="doc-node">最終チェック</div><div class="doc-node">あなたがレビュー</div></div><figcaption>アサーションの失敗が再現され、元のテストが通れば、1回だけ修正できます。無効な結果が出たら停止します。</figcaption></figure><p>エージェントは順番に実行されます。Builder の変更前と変更後に、既存のテストがすべて成功する必要があります。提出されたテストは 2 回実行し、そのつど新しい作業領域を用意します。既存のテストが成功したままアサーションの失敗を再現できた場合に限り、1 回の追加修正を認めます。提出内容が無効だったり、結果が一致しなかったりした場合は、処理を止めてレビューに回します。</p>
+<p>検証を実行するのはコントローラーです。エージェント自身が合否を決めることはありません。詳しいルールは<a href="docs.html?article=design">設計ドキュメント</a>を参照してください。</p>
+<h2 id="example">例：セッションの有効期限</h2>
+<p>セッションの有効性を <code>expiresAt &gt;= now</code> で判定するコードがあります。テストは過去と未来の時刻を確認していますが、有効期限ちょうどの時刻を確認していません。</p>
+<p>タスクは、有効期限に達したセッションを無効にすることです。</p>
+<pre><code class="language-diff">- return expiresAt &gt;= now
++ return expiresAt &gt; now
+</code></pre>
+<p>Challenger は <code>Valid(100, 100)</code> の戻り値が <code>false</code> になることをテストできます。<a href="docs.html?article=example">記録した実行例</a>では、Builder がこの変更を行い、Challenger のテストは成功しました。追加の修正は不要でした。</p>
+<p>このバグと、すべて成功するテストを含む小さなリポジトリで、<a href="docs.html?article=example">実行例を試せます</a>。</p>
+<h2 id="results">実行結果</h2>
+<p>実行結果は <code>~/.tarigato/runs/&lt;id&gt;/</code> に保存されます。正常に完了した実行には、次のファイルが含まれます。</p>
+<table>
+<thead>
+<tr>
+<th>ファイル</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>changes.patch</code></td>
+<td>最終的なソースコードの変更。</td>
+</tr>
+<tr>
+<td><code>tests.patch</code></td>
+<td>受け入れられた Challenger のテスト。提出がなければ空のパッチ。</td>
+</tr>
+<tr>
+<td><code>report.md</code></td>
+<td>結果と、検証を再実行するためのコマンド。</td>
+</tr>
+<tr>
+<td><code>result.json</code></td>
+<td>テストの観測結果、ツールのバージョン、生成物のハッシュ。</td>
+</tr>
+</tbody>
+</table>
+<p>Tarigato は別の作業領域を使います。手元のチェックアウトにパッチを適用したり、マージやプッシュを行ったりすることはありません。</p>
+<p><code>ready_for_review</code> は、最終検証が成功したことを示します。差分とテストの期待値は、自分で確認してください。テストの成功や「問題が見つからなかった」という報告は、コードの正しさを証明するものではありません。</p>
+<h2 id="limits">制限</h2>
+<ul>
+<li>Builder が変更できるのは、<code>testdata</code>、<code>vendor</code>、<code>.github</code> の外にある実装コードの <code>.go</code> ファイルだけです。既存のテスト、依存関係、設定は保護されます。</li>
+<li>シンボリックリンク、サブモジュール、Git attributes / LFS の設定、Go ワークスペースには対応していません。<a href="docs.html?article=design#workspaces-and-tests">リポジトリの要件</a>を参照してください。</li>
+<li>信頼できるプロジェクトで使ってください。エージェントと生成されたテストはローカルで動きます。作業領域を分けても、サンドボックスにはなりません。<a href="docs.html?article=security">セキュリティ</a>を参照してください。</li>
+<li>Codex は macOS で基本的な動作を確認済みです。Claude はアダプターのテストのみで、実際の CLI を使った動作は未確認です。Windows には対応していません。</li>
+</ul>
+<p><a href="docs.html?article=design">設計</a> · <a href="docs.html?article=contributing">コントリビューション</a> · <a href="docs.html?article=security">セキュリティ</a></p>
+<p>README は 4 言語で読めます。ターミナルの出力と詳細ドキュメントは、現在英語のみです。</p>
+<p>開発：<a href="https://tmls.nyc">TMLS.NYC</a>。ライセンスはまだ決まっていません。</p>

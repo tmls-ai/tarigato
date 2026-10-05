@@ -1,0 +1,89 @@
+<p>Tarigato ist ein kleiner CLI-Harness. Gib ihm eine Aufgabe. Ein Agent setzt sie um, ein zweiter sucht nach Fehlern. Du prüfst den Patch.</p>
+<p><strong>Experimentell.</strong> macOS und Linux.</p>
+<h2 id="install">Installation</h2>
+<p>Du brauchst Go 1.27.1+, Git und Codex CLI oder Claude Code. Installiere das gewählte CLI, melde dich dort an und stelle sicher, dass es über deinen <code>PATH</code> erreichbar ist.</p>
+<pre><code class="language-sh">git clone https://github.com/tmls-ai/tarigato.git
+cd tarigato
+go build -o tarigato ./cmd/tarigato
+export PATH=&quot;$PWD:$PATH&quot;
+</code></pre>
+<p>Die letzte Zeile nimmt Tarigato für die aktuelle Terminalsitzung in deinen <code>PATH</code> auf.</p>
+<h2 id="usage">Verwendung</h2>
+<p>Starte Tarigato im Projekt, das du ändern möchtest:</p>
+<pre><code class="language-sh">cd /path/to/your-project
+tarigato &quot;Reject sessions when expiry is at or before now&quot;
+</code></pre>
+<p>Das aktuelle Verzeichnis bestimmt das Git-Repository. Der Text in Anführungszeichen ist die Aufgabe. Das Repository muss einen Commit haben und darf keine uncommitteten Änderungen enthalten. Im Stammverzeichnis muss eine <code>go.mod</code> liegen, und mindestens ein benannter Test muss bestehen. Ohne Aufgabe zeigt <code>tarigato</code> die Hilfe an.</p>
+<p>Standardmäßig verwenden beide Agenten Codex in getrennten Sitzungen. Du kannst den Anbieter für jede Rolle einzeln wählen:</p>
+<pre><code class="language-sh">tarigato --builder codex --challenger claude &quot;Fix the session expiry boundary&quot;
+</code></pre>
+<p>Optionen stehen vor der Aufgabe. <code>--timeout 30m</code> begrenzt die gesamte Laufzeit; der Standard sind 30 Minuten. <code>--help</code> zeigt die Optionen. <code>NO_COLOR=1</code> schaltet die Terminalfarben aus.</p>
+<h2 id="how-it-works">Ablauf</h2>
+<table>
+<thead>
+<tr>
+<th>Rolle</th>
+<th>Aufgabe</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Agent 1: Builder</td>
+<td>Ändert Go-Produktivcode, ohne bestehende Tests zu verändern.</td>
+</tr>
+<tr>
+<td>Agent 2: Challenger</td>
+<td>Reicht einen Test für einen möglichen Fehler ein oder meldet, dass kein Fehler gefunden wurde.</td>
+</tr>
+</tbody>
+</table>
+<figure class="doc-diagram"><div class="doc-flow"><div class="doc-node">Ausgangslage</div><div class="doc-node">Builder</div><div class="doc-node">Kandidatenprüfung</div><div class="doc-node">Challenger</div><div class="doc-node">Zweimal prüfen</div></div><div class="doc-branches"><div>Bestanden oder kein Befund → Abschlussprüfung</div><div>Reproduzierter Fehler → Einmal korrigieren</div><div>Ungültig oder instabil: zur Prüfung stoppen</div></div><div class="doc-flow"><div class="doc-node">Abschlussprüfung</div><div class="doc-node">Deine Prüfung</div></div><figcaption>Eine stabil fehlschlagende Assertion erlaubt eine Korrektur, sofern die ursprünglichen Tests bestehen. Ein ungültiges Ergebnis stoppt den Lauf.</figcaption></figure><p>Die Agenten arbeiten nacheinander. Bestehende Tests müssen vor und nach der Änderung des Builders bestehen. Tarigato führt den eingereichten Test zweimal in frischen Arbeitsverzeichnissen aus. Schlägt eine Assertion wiederholt fehl und bestehen die ursprünglichen Tests weiterhin, ist eine Korrektur erlaubt. Bei ungültigen oder uneinheitlichen Challenger-Ergebnissen stoppt der Durchlauf zur Prüfung.</p>
+<p>Die Steuerung führt die Prüfungen aus; die Agenten entscheiden nicht selbst, ob ihre Arbeit besteht. Alle Regeln stehen im <a href="docs.html?article=design">Design-Dokument</a>.</p>
+<h2 id="example">Beispiel: Abgelaufene Sitzungen</h2>
+<p>Eine Sitzungsprüfung verwendet <code>expiresAt &gt;= now</code>. Ihre Tests prüfen Zeitstempel in der Vergangenheit und Zukunft, aber nicht den genauen Ablaufzeitpunkt.</p>
+<p>Die Aufgabe: Sitzungen ab ihrem Ablaufzeitpunkt ablehnen.</p>
+<pre><code class="language-diff">- return expiresAt &gt;= now
++ return expiresAt &gt; now
+</code></pre>
+<p>Der Challenger kann <code>Valid(100, 100)</code> testen und <code>false</code> erwarten. Im <a href="docs.html?article=example">aufgezeichneten Beispiel</a> nahm der Builder diese Änderung vor, und der Test des Challengers bestand. Eine Korrektur war nicht nötig.</p>
+<p><a href="docs.html?article=example">Probiere das Beispiel aus</a>: ein kleines Repository mit diesem Fehler und einer bestehenden Testsuite, deren Tests alle bestehen.</p>
+<h2 id="results">Ergebnisse</h2>
+<p>Durchläufe werden unter <code>~/.tarigato/runs/&lt;id&gt;/</code> gespeichert. Ein erfolgreicher Durchlauf enthält:</p>
+<table>
+<thead>
+<tr>
+<th>Datei</th>
+<th>Inhalt</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>changes.patch</code></td>
+<td>Abschließende Änderungen am Quellcode.</td>
+</tr>
+<tr>
+<td><code>tests.patch</code></td>
+<td>Der akzeptierte Test des Challengers oder ein leerer Patch, falls keiner eingereicht wurde.</td>
+</tr>
+<tr>
+<td><code>report.md</code></td>
+<td>Ergebnisse und Befehle zum Wiederholen der Prüfungen.</td>
+</tr>
+<tr>
+<td><code>result.json</code></td>
+<td>Testergebnisse, Werkzeugversionen und Hashes der Artefakte.</td>
+</tr>
+</tbody>
+</table>
+<p>Tarigato verwendet separate Arbeitsverzeichnisse. Es wendet keine Patches auf deinen Checkout an und führt weder Merge noch Push aus.</p>
+<p><code>ready_for_review</code> bedeutet, dass die abschließenden Prüfungen bestanden wurden. Prüfe den Diff und den Erwartungswert des Tests selbst. Auch wenn ein Test besteht oder kein Fehler gefunden wird, ist damit nicht bewiesen, dass der Code korrekt ist.</p>
+<h2 id="limits">Grenzen</h2>
+<ul>
+<li>Der Builder darf nur <code>.go</code>-Dateien mit Produktivcode außerhalb von <code>testdata</code>, <code>vendor</code> und <code>.github</code> ändern. Bestehende Tests, Abhängigkeiten und Konfiguration sind geschützt.</li>
+<li>Symlinks, Submodule, Git-Attribute/LFS-Konfiguration und Go-Workspaces werden nicht unterstützt. Siehe <a href="docs.html?article=design#workspaces-and-tests">Anforderungen an das Repository</a>.</li>
+<li>Verwende vertrauenswürdige Projekte. Agenten und generierte Tests werden lokal ausgeführt; separate Arbeitsverzeichnisse sind keine Sandboxes. Siehe <a href="docs.html?article=security">Sicherheit</a>.</li>
+<li>Codex hat einen Smoke-Test unter macOS bestanden. Für Claude gibt es Adaptertests, aber noch keinen Test mit einem echten Durchlauf. Windows wird nicht unterstützt.</li>
+</ul>
+<p><a href="docs.html?article=design">Design</a> · <a href="docs.html?article=contributing">Mitwirken</a> · <a href="docs.html?article=security">Sicherheit</a></p>
+<p>Die README ist in vier Sprachen verfügbar. Terminalausgabe und ausführliche Dokumentation sind derzeit auf Englisch.</p>
+<p>Entwickelt von <a href="https://tmls.nyc">TMLS.NYC</a>. Die Lizenz steht noch nicht fest.</p>

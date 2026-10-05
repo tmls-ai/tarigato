@@ -1,0 +1,89 @@
+<p>Tarigato is a small CLI harness. Give it a task. One agent builds, another tries to break it, and you review the patch.</p>
+<p><strong>Experimental.</strong> macOS and Linux.</p>
+<h2 id="install">Install</h2>
+<p>You need Go 1.27.1+, Git, and an authenticated Codex CLI or Claude Code on your <code>PATH</code>.</p>
+<pre><code class="language-sh">git clone https://github.com/tmls-ai/tarigato.git
+cd tarigato
+go build -o tarigato ./cmd/tarigato
+export PATH=&quot;$PWD:$PATH&quot;
+</code></pre>
+<p>The last line adds Tarigato to your <code>PATH</code> for this terminal session.</p>
+<h2 id="usage">Usage</h2>
+<p>Run it inside the project you want to change:</p>
+<pre><code class="language-sh">cd /path/to/your-project
+tarigato &quot;Reject sessions when expiry is at or before now&quot;
+</code></pre>
+<p>The current directory selects the Git repository. The quoted text is the task. The repository must be clean and committed, with a root <code>go.mod</code> and at least one passing named test. Running <code>tarigato</code> without a task prints help.</p>
+<p>Both agents use Codex by default, in separate sessions. You can choose a provider for each role:</p>
+<pre><code class="language-sh">tarigato --builder codex --challenger claude &quot;Fix the session expiry boundary&quot;
+</code></pre>
+<p>Put options before the task. <code>--timeout 30m</code> sets the total deadline; 30 minutes is the default. <code>--help</code> lists the options. <code>NO_COLOR=1</code> turns off terminal colors.</p>
+<h2 id="how-it-works">How it works</h2>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Job</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Agent 1: Builder</td>
+<td>Change production Go code without changing existing tests.</td>
+</tr>
+<tr>
+<td>Agent 2: Challenger</td>
+<td>Submit one test for a possible bug, or report no finding.</td>
+</tr>
+</tbody>
+</table>
+<figure class="doc-diagram"><div class="doc-flow"><div class="doc-node">Baseline</div><div class="doc-node">Builder</div><div class="doc-node">Candidate checks</div><div class="doc-node">Challenger</div><div class="doc-node">Verify twice</div></div><div class="doc-branches"><div>Pass or no finding → Final checks</div><div>Reproduced failure → Repair, once</div><div>Invalid or unstable: stop for review</div></div><div class="doc-flow"><div class="doc-node">Final checks</div><div class="doc-node">Your review</div></div><figcaption>A stable failing challenge permits one repair. An invalid result stops the run.</figcaption></figure><p>The agents run in order. Existing tests must pass before and after the builder's change. Tarigato runs the submitted test twice in fresh workspaces. A repeated assertion failure, with the original tests still passing, allows one repair. Invalid or inconsistent challenges stop for review.</p>
+<p>The controller runs the checks; the agents do not decide whether their work passes. See the <a href="docs.html?article=design">design</a> for the full rules.</p>
+<h2 id="example">Example: session expiry</h2>
+<p>A session check uses <code>expiresAt &gt;= now</code>. Its tests cover past and future timestamps but miss the exact expiry time.</p>
+<p>The task is to reject sessions at or after expiry:</p>
+<pre><code class="language-diff">- return expiresAt &gt;= now
++ return expiresAt &gt; now
+</code></pre>
+<p>The challenger can test <code>Valid(100, 100)</code> and expect <code>false</code>. In the <a href="docs.html?article=example">recorded example</a>, the builder made this change and the challenger's test passed. No repair was needed.</p>
+<p><a href="docs.html?article=example">Run the example</a> in a small repository with that bug and a passing test suite.</p>
+<h2 id="results">Results</h2>
+<p>Runs are saved under <code>~/.tarigato/runs/&lt;id&gt;/</code>. A successful run includes:</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>changes.patch</code></td>
+<td>Final source changes.</td>
+</tr>
+<tr>
+<td><code>tests.patch</code></td>
+<td>The accepted challenge test, or an empty patch if none was submitted.</td>
+</tr>
+<tr>
+<td><code>report.md</code></td>
+<td>Results and commands to replay the checks.</td>
+</tr>
+<tr>
+<td><code>result.json</code></td>
+<td>Test observations, tool versions, and artifact hashes.</td>
+</tr>
+</tbody>
+</table>
+<p>Tarigato uses separate workspaces. It does not apply patches to your checkout, merge, or push.</p>
+<p><code>ready_for_review</code> means the final checks passed. Review the diff and the test's expectation yourself. A passing test or no finding does not prove the code is correct.</p>
+<h2 id="limits">Limits</h2>
+<ul>
+<li>Builder changes are limited to production <code>.go</code> files outside <code>testdata</code>, <code>vendor</code>, and <code>.github</code>. Existing tests, dependencies, and configuration are protected.</li>
+<li>Symlinks, submodules, Git attributes/LFS configuration, and Go workspaces are unsupported. See the <a href="docs.html?article=design#workspaces-and-tests">repository requirements</a>.</li>
+<li>Use trusted projects. Agents and generated tests run locally; separate workspaces are not sandboxes. See <a href="docs.html?article=security">Security</a>.</li>
+<li>Codex has passed a macOS smoke test. Claude has adapter tests but has not been tested live. Windows is unsupported.</li>
+</ul>
+<p><a href="docs.html?article=design">Design</a> · <a href="docs.html?article=contributing">Contributing</a> · <a href="docs.html?article=security">Security</a></p>
+<p>The README is available in four languages. Terminal output and detailed documentation are currently in English.</p>
+<p>Built by <a href="https://tmls.nyc">TMLS.NYC</a>. A license has not been chosen yet.</p>

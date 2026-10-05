@@ -21,3 +21,9 @@ jobs:
       - run: go test ./...
         working-directory: examples/session-expiry
       - run: go build ./cmd/tarigato
+      - name: Check website
+        run: |
+          node --check site/dist/app.js
+          node site/scripts/check-boundary.mjs
+          node site/scripts/check-example.mjs
+          python3 site/scripts/check.py

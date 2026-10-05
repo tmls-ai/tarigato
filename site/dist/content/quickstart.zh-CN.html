@@ -1,0 +1,89 @@
+<p>Tarigato 是一个轻量的 CLI 工具。给它一个任务，一个智能体实现改动，另一个尝试找出问题。最后由你审查补丁。</p>
+<p><strong>实验阶段。</strong> macOS 和 Linux。</p>
+<h2 id="install">安装</h2>
+<p>需要 Go 1.27.1+、Git，以及已完成身份验证且位于 <code>PATH</code> 中的 Codex CLI 或 Claude Code。</p>
+<pre><code class="language-sh">git clone https://github.com/tmls-ai/tarigato.git
+cd tarigato
+go build -o tarigato ./cmd/tarigato
+export PATH=&quot;$PWD:$PATH&quot;
+</code></pre>
+<p>最后一行将 Tarigato 加入当前终端会话的 <code>PATH</code>。</p>
+<h2 id="usage">使用</h2>
+<p>在你想修改的项目中运行：</p>
+<pre><code class="language-sh">cd /path/to/your-project
+tarigato &quot;Reject sessions when expiry is at or before now&quot;
+</code></pre>
+<p>当前目录决定使用哪个 Git 仓库，引号中的文字就是任务。仓库必须已有提交且没有未提交的改动，根目录中必须有 <code>go.mod</code>，并且至少有一个有名称且能通过的测试。不提供任务直接运行 <code>tarigato</code> 会显示帮助。</p>
+<p>两个智能体默认都使用 Codex，各自在独立会话中运行。你可以分别选择工具：</p>
+<pre><code class="language-sh">tarigato --builder codex --challenger claude &quot;Fix the session expiry boundary&quot;
+</code></pre>
+<p>选项需放在任务之前。<code>--timeout 30m</code> 设置整次运行的时限，默认是 30 分钟。<code>--help</code> 列出所有选项。<code>NO_COLOR=1</code> 关闭终端颜色。</p>
+<h2 id="how-it-works">工作方式</h2>
+<table>
+<thead>
+<tr>
+<th>角色</th>
+<th>职责</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>智能体 1：Builder（实现）</td>
+<td>修改非测试 Go 代码，不改动现有测试。</td>
+</tr>
+<tr>
+<td>智能体 2：Challenger（查错）</td>
+<td>针对可能的缺陷提交一个测试，或报告未发现问题。</td>
+</tr>
+</tbody>
+</table>
+<figure class="doc-diagram"><div class="doc-flow"><div class="doc-node">基线</div><div class="doc-node">实现者</div><div class="doc-node">候选代码检查</div><div class="doc-node">挑战者</div><div class="doc-node">验证两次</div></div><div class="doc-branches"><div>通过或未发现问题 → 最终检查</div><div>失败已复现 → 仅修复一次</div><div>无效或不稳定：停止并交由审查</div></div><div class="doc-flow"><div class="doc-node">最终检查</div><div class="doc-node">由你审阅</div></div><figcaption>挑战测试稳定触发断言失败且原有测试通过，才允许修复一次。无效结果会终止运行。</figcaption></figure><p>两个智能体依次运行。Builder 修改代码前后，现有测试都必须通过。Tarigato 会在全新的工作目录中将提交的测试运行两次。只有两次都出现断言失败，且原有测试仍然通过时，才允许修复一次。测试不符合要求或两次结果不一致时，流程会停止，等待审查。</p>
+<p>检查由控制程序执行，是否通过不由智能体自行判断。完整规则见<a href="docs.html?article=design">设计文档</a>。</p>
+<h2 id="example">示例：会话过期</h2>
+<p>一个会话检查使用 <code>expiresAt &gt;= now</code>。现有测试覆盖了过期时间早于和晚于当前时间的情况，却漏掉了两者相等的边界。</p>
+<p>任务是让会话在到达过期时间及之后失效：</p>
+<pre><code class="language-diff">- return expiresAt &gt;= now
++ return expiresAt &gt; now
+</code></pre>
+<p>Challenger 可以测试 <code>Valid(100, 100)</code>，预期结果为 <code>false</code>。在<a href="docs.html?article=example">演示中的实际运行</a>里，Builder 做出了上述修改，Challenger 提交的测试也通过了，因此无需追加修复。</p>
+<p>你可以在一个包含此缺陷、现有测试均能通过的小型仓库中<a href="docs.html?article=example">运行示例</a>。</p>
+<h2 id="results">运行结果</h2>
+<p>每次运行的结果保存在 <code>~/.tarigato/runs/&lt;id&gt;/</code>。成功运行后会生成：</p>
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>changes.patch</code></td>
+<td>最终的源代码改动。</td>
+</tr>
+<tr>
+<td><code>tests.patch</code></td>
+<td>被接受的挑战测试；未提交测试时为空补丁。</td>
+</tr>
+<tr>
+<td><code>report.md</code></td>
+<td>运行结果及重新执行检查的命令。</td>
+</tr>
+<tr>
+<td><code>result.json</code></td>
+<td>测试运行记录、工具版本和产物哈希值。</td>
+</tr>
+</tbody>
+</table>
+<p>Tarigato 使用独立的工作目录，不会把补丁应用到你的本地检出目录，也不会合并或推送。</p>
+<p><code>ready_for_review</code> 表示最终检查已通过。你仍需自行审查代码差异和测试的预期结果。测试通过或未发现问题，并不能证明代码正确。</p>
+<h2 id="limits">限制</h2>
+<ul>
+<li>Builder 只能修改 <code>testdata</code>、<code>vendor</code> 和 <code>.github</code> 之外的非测试 <code>.go</code> 文件。现有测试、依赖和配置均受保护。</li>
+<li>不支持符号链接、子模块、Git attributes/LFS 配置和 Go 工作区。详见<a href="docs.html?article=design#workspaces-and-tests">仓库要求</a>。</li>
+<li>只在可信项目中使用。智能体和生成的测试均在本地运行，独立工作目录并不是沙箱。详见<a href="docs.html?article=security">安全说明</a>。</li>
+<li>Codex 已通过 macOS 冒烟测试。Claude 的适配器有测试覆盖，但尚未进行实际运行验证。不支持 Windows。</li>
+</ul>
+<p><a href="docs.html?article=design">设计文档</a> · <a href="docs.html?article=contributing">贡献指南</a> · <a href="docs.html?article=security">安全说明</a></p>
+<p>README 提供四种语言版本。终端输出和详细文档目前为英文。</p>
+<p>由 <a href="https://tmls.nyc">TMLS.NYC</a> 开发。尚未选定许可证。</p>

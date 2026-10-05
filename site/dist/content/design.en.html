@@ -1,0 +1,104 @@
+<h1 id="tarigato-design">Tarigato design</h1>
+<p><strong>TMLS.NYC · experimental Go implementation</strong></p>
+<p>One foreground command runs a small adversarial game: a builder satisfies a task, a challenger looks for a counterexample, and a Go controller checks the result. Two agent roles; no judge agent.</p>
+<h2 id="game-rules">Game rules</h2>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Objective</th>
+<th>Allowed move</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Builder</td>
+<td>Make the requested behavior work</td>
+<td>Change production code; repair once after a reproduced challenge</td>
+</tr>
+<tr>
+<td>Challenger</td>
+<td>Expose a requirement the patch violates</td>
+<td>Submit one new Go test file with one named test, or report no finding</td>
+</tr>
+<tr>
+<td>Controller</td>
+<td>Enforce the rules and record observations</td>
+<td>Run checks, preserve evidence, bound execution, and report outcomes</td>
+</tr>
+<tr>
+<td>Human</td>
+<td>Decide what should ship</td>
+<td>Review the requirement, test, and final diff</td>
+</tr>
+</tbody>
+</table>
+<p>Opposing objectives and fixed rules are the game-theory mechanism. There are no scores, learned rewards, or claims of an optimal strategy. A critique must become an executable test to count as a challenge. A failing test establishes an observation; you decide whether its expectation is correct.</p>
+<h2 id="the-loop">The loop</h2>
+<figure class="doc-diagram"><div class="doc-node">Clean committed Go repository</div><div class="decision-rows"><div class="decision-row"><strong>Baseline passes?</strong><span>Yes: builder changes source</span><span>No: stop</span></div><div class="decision-row"><strong>Original checks pass?</strong><span>Yes: challenger session</span><span>No: stop</span></div><div class="decision-row"><strong>One valid test?</strong><span>Yes: run twice on candidate</span><span>No finding: final checks; invalid: stop</span></div><div class="decision-row"><strong>Same observed outcome?</strong><span>Passes: final checks</span><span>Inconsistent: stop</span></div><div class="decision-row"><strong>Repeated assertion failure?</strong><span>Original suite passes: one repair</span><span>Original suite fails: stop</span></div></div><div class="doc-flow"><div class="doc-node">Final checks</div><div class="doc-node">Save evidence for human review</div></div><figcaption>Stopped runs save the evidence available. Final checks must pass for ready_for_review.</figcaption></figure><p>The baseline, candidate, challenge, and final checks are separate observations. Missing or skipped tests, inconsistent outcomes, compilation errors, and crashed agents cannot become successful findings. An invalid challenge stops the run without a repair.</p>
+<p>A passing challenge is retained for final checks. A reproduced failure permits one repair with the challenge test frozen. The final result still requires the original checks and admitted test to pass. A second repair is never attempted.</p>
+<h2 id="architecture">Architecture</h2>
+<figure class="doc-diagram"><div class="doc-flow"><div class="doc-node">CLI: task, agents, deadline</div><div class="doc-node">Go controller</div></div><div class="doc-fan"><div class="doc-node">Builder CLI process</div><div class="doc-node">Challenger CLI process</div><div class="doc-node">Go test process</div></div><div class="doc-flow"><div class="doc-node">Separate Git workspaces</div><div class="doc-node">Local patches, result, report</div></div><figcaption>The controller starts each process and writes the artifacts.</figcaption></figure><p>One controller owns the sequence and run directory. Agent output proposes changes; it does not choose the final status. Go's standard library handles command-line parsing, processes, JSON, filesystem operations, and hashes. Git and Go are external tools. There is no background service, database, or configuration file.</p>
+<h2 id="command">Command</h2>
+<pre><code class="language-sh">tarigato [--builder codex|claude] [--challenger codex|claude] [--timeout 30m] &quot;task&quot;
+</code></pre>
+<p>Options precede the task. Defaults are separate Codex sessions and a 30-minute total deadline. The deadline bounds execution; it is not a money cap. Commands have an 8 MiB output limit. Checks use <code>go test -json -count=1 ./...</code>. Go may fetch project dependencies according to the local environment. <code>tarigato --version</code> prints the binary version.</p>
+<p>Provider adapters are experimental; see the recorded smoke-test coverage below. Controller tests substitute fake agents and require no provider credentials. Adapters preserve provider permission controls and supply a temporary Go build cache. Provider command failures stop as <code>blocked</code>; malformed structured responses stop as <code>error</code>.</p>
+<h2 id="workspaces-and-tests">Workspaces and tests</h2>
+<p>The source repository must be clean and committed, including no untracked files except those ignored by Git. It needs a root <code>go.mod</code>, a passing baseline, and at least one passing named test. Symlinks and submodules are rejected, as are root-level <code>.gitattributes</code>, <code>.lfsconfig</code>, and <code>go.work</code> files.</p>
+<p>Ignored files from your original checkout are not copied into the run. Tarigato runs in separate workspaces and captures patches for you to apply: the candidate before the challenge, and final source after any repair. It checks whether the original checkout changed during a completed run; this does not provide filesystem isolation.</p>
+<p>The builder may change only regular production <code>.go</code> files outside <code>testdata</code>, <code>vendor</code>, and <code>.github</code>. Existing tests and every other file are protected. The challenger may add one <code>tarigato_challenge_test.go</code> file with one named test and local helpers. Test admission rejects unsupported changes and test-runner hooks. The controller compares workspace hashes and records artifact hashes and parses Go test events to confirm that the expected test actually executed. Check-time changes to workspace files, including generated ignored files, invalidate the observation.</p>
+<p>Go 1.27.1 or newer is required. Its structured test output distinguishes assertion failures from ordinary log messages. Panics, missing tests, and unsupported diagnostics remain inconclusive.</p>
+<p>The controller reruns the challenge and checks the combined suite. It does not establish complete test coverage or prove correctness. Workspaces and agent permission settings are not an operating-system sandbox; use trusted projects. See <a href="docs.html?article=security">Security</a>.</p>
+<h2 id="results">Results</h2>
+<p>Each run lives under <code>~/.tarigato/runs/&lt;id&gt;/</code>. The terminal prints the result and its location. A completed run contains:</p>
+<pre><code class="language-text">candidate.patch    base -&gt; source challenged
+changes.patch      base -&gt; final source
+tests.patch        admitted challenge test
+result.json        task, identities, observations, and final status
+report.md          review and replay instructions
+logs/*.jsonl       bounded test diagnostics
+</code></pre>
+<p>Candidate and final source patches are alternatives. Replay the original failure from the recorded base plus <code>candidate.patch</code> and <code>tests.patch</code>. Replay the final checks from a fresh base plus <code>changes.patch</code> and <code>tests.patch</code>. Stopped runs may have only the artifacts produced before stopping.</p>
+<p>Unsuccessful runs retain any created workspaces under <code>workspaces/</code> for inspection. These contain unvalidated changes. Successful runs remove their workspaces and retain the report, patches, and diagnostics.</p>
+<table>
+<thead>
+<tr>
+<th>Status</th>
+<th>Meaning</th>
+<th style="text-align:right">Exit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ready_for_review</code></td>
+<td>Challenge completed and final checks passed</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td><code>needs_review</code></td>
+<td>A code/test failure or invalid/inconclusive challenge remains</td>
+<td style="text-align:right">1</td>
+</tr>
+<tr>
+<td><code>blocked</code></td>
+<td>Prerequisite, provider command failure, or execution limit prevents completion</td>
+<td style="text-align:right">2</td>
+</tr>
+<tr>
+<td><code>error</code></td>
+<td>Controller failure or malformed structured response</td>
+<td style="text-align:right">3</td>
+</tr>
+<tr>
+<td><code>interrupted</code></td>
+<td>User cancelled the run</td>
+<td style="text-align:right">130</td>
+</tr>
+</tbody>
+</table>
+<p>No finding means no additional defect was demonstrated. <code>ready_for_review</code> is a check result, not permission to merge. Review the test's expectation and final diff yourself.</p>
+<h2 id="validation-and-release">Validation and release</h2>
+<p>Run <code>go test -race ./...</code>, <code>go vet ./...</code>, and <code>go build ./cmd/tarigato</code>. Deterministic tests exercise the game with fake agents and temporary repositories. Real-provider runs are separate qualification and must name the CLI version and host actually tested.</p>
+<p>On 2026-10-01, Codex CLI 0.159.2 with Go 1.27.1 on macOS arm64 completed a synthetic expiry-boundary task as <code>ready_for_review</code>: source edit, submitted challenge, two passing challenge runs, and passing final checks. No repair was needed in that live run; deterministic tests cover the repair path. Claude has adapter tests but has not been tested live. This is smoke coverage, not a general reliability claim.</p>
+<p>Before a public release: broaden provider coverage, choose the license and rights-holder notice, establish a monitored private security-reporting route, and verify the README from a clean checkout. The README is available in English, Japanese, Simplified Chinese, and German; terminal output and detailed documentation remain in English. Add runners or platforms when a real use case requires them.</p>

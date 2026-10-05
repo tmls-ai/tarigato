@@ -1,0 +1,19 @@
+<h1 id="contributing">Contributing</h1>
+<p>Tarigato is an experimental TMLS.NYC project. Start with the <a href="docs.html?article=design">design</a>.</p>
+<pre><code class="language-sh">go test -race ./...
+go vet ./...
+go build ./cmd/tarigato
+</code></pre>
+<p>Tests use fake agent processes and temporary Go repositories; no model credentials are needed.</p>
+<ul>
+<li>Keep the change small and describe the problem it solves.</li>
+<li>Include a small runnable check for changed behavior.</li>
+<li>State which checks actually ran and which did not. Keep provider qualification separate from controller tests.</li>
+<li>Update documentation and Mermaid diagrams when the workflow changes.</li>
+<li>Write commits and PRs for a public reader: problem, change, validation, and remaining limits. Preserve real authorship and third-party credit.</li>
+<li>Use synthetic examples. Keep credentials, private conversations, customer code, and unrelated local paths out of commits, logs, and screenshots.</li>
+<li>Use plain descriptions and runnable examples. Avoid slogans and claims the implementation cannot support.</li>
+<li>Keep the <a href="docs.html?article=quickstart">English</a>, <a href="docs.html?article=quickstart&amp;lang=ja">Japanese</a>, <a href="docs.html?article=quickstart&amp;lang=zh-CN">Simplified Chinese</a>, and <a href="docs.html?article=quickstart&amp;lang=de">German</a> READMEs aligned when usage or limits change. Use English as the source; preserve commands, flags, file names, and status strings in translations. Have a fluent reviewer check changes to translated prose.</li>
+</ul>
+<p>Discuss changes to the two-role game or one-repair rule before implementing them. License selection and contribution terms must be finalized before the public release; no license has been granted by these docs.</p>
+<p>See <a href="docs.html?article=security">SECURITY.md</a> for current reporting limits.</p>

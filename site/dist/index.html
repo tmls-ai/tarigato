@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tarigato</title>
+<meta name="description" content="Tarigato is a small CLI harness. One agent builds, another challenges, and you review the patch.">
+<meta name="theme-color" content="#f8f9f5"><link rel="icon" href="assets/tarigato-mark.png"><link rel="preload" href="assets/fonts/manrope.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="style.css">
+</head>
+<body class="home-page">
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header"><div class="header-inner">
+<a class="brand" href="./" aria-label="Tarigato home"><img src="assets/tarigato-mark.png" alt="" width="32" height="32"><span>tarigato</span></a>
+<nav class="desktop-nav" aria-label="Main navigation"><a href="demo.html" data-i18n="navDemo">Demo</a><a href="#how" data-i18n="navWorkflow">How it works</a><a href="docs.html" data-i18n="navDocs">Docs</a></nav>
+<div class="header-actions"><label class="sr-only" for="language">Language</label><select id="language" aria-label="Language"><option value="en">EN</option><option value="ja">日本語</option><option value="zh-CN">中文</option><option value="de">DE</option></select><a class="github-link" href="https://github.com/tmls-ai/tarigato" target="_blank" rel="noopener">GitHub</a><button class="menu-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-nav">☰</button></div>
+</div><nav id="mobile-nav" class="mobile-nav" hidden aria-label="Mobile navigation"><a href="demo.html" data-i18n="navDemo">Demo</a><a href="#how" data-i18n="navWorkflow">How it works</a><a href="docs.html" data-i18n="navDocs">Docs</a><a href="https://github.com/tmls-ai/tarigato" target="_blank" rel="noopener">GitHub</a></nav></header>
+<main id="main" class="simple-home wrap">
+<section class="home-intro" aria-labelledby="harness-title"><h1 id="harness-title"><span data-i18n="boxLead">A tiny</span><span data-i18n="boxAccent">adversarial harness.</span></h1><div class="home-summary"><p data-i18n="boxIntro">Give it a task in your terminal. One agent changes the code. Another tries to break it with a test. You review the patch.</p><div class="home-actions"><a class="home-docs" href="docs.html" data-i18n="navDocs">Docs</a><a class="home-link star-link" href="https://github.com/tmls-ai/tarigato" target="_blank" rel="noopener"><span aria-hidden="true">☆ </span><span data-i18n="starRepo">Star on GitHub</span></a></div></div></section>
+
+<section id="how" class="home-how" aria-labelledby="flow-title">
+<h2 id="flow-title" data-i18n="navWorkflow">How it works</h2>
+<div id="home-example" class="mini-example">
+<div class="cli-example"><code><span class="shell-prompt" aria-hidden="true">$ </span>tarigato "Reject expired sessions"</code><button class="copy-button" data-copy='tarigato "Reject expired sessions"' data-i18n="copy">Copy</button></div>
+<div class="mini-roles" role="group" aria-label="Example steps"><button data-home-role="0" aria-pressed="true"><small aria-hidden="true">01</small><span data-i18n="miniBuilder">Builder</span></button><button data-home-role="1" aria-pressed="false"><small aria-hidden="true">02</small><span data-i18n="miniChallenger">Challenger</span></button><button data-home-role="2" aria-pressed="false"><small aria-hidden="true">03</small><span data-i18n="human">You</span></button></div>
+<div class="mini-detail" aria-live="polite" aria-atomic="true"><div><h3 id="mini-title"></h3><p id="mini-text"></p></div><pre id="mini-code"></pre></div>
+<div class="mini-bottom"><p data-i18n="miniDisclosure">Example simulation. No agents run here.</p><button id="mini-next" data-i18n="miniNext">Next step →</button></div>
+</div>
+</section>
+</main>
+<footer class="site-footer wrap"><a class="brand" href="./"><img src="assets/tarigato-mark.png" alt="" width="28" height="28"><span>tarigato</span></a><p data-i18n="footerCredit">TMLS.NYC</p><div><a href="assets/tarigato-mark.png" download data-i18n="downloadLogo">Logo</a><a href="https://github.com/tmls-ai/tarigato" target="_blank" rel="noopener">GitHub</a><a href="docs.html?article=contributing" data-i18n="contribute">Contribute</a></div></footer>
+<div class="toast" role="status" aria-live="polite" hidden></div>
+<script type="module" src="app.js"></script>
+</body></html>
