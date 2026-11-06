@@ -161,6 +161,11 @@ func Run(ctx context.Context, opts Options) (r Result, err error) {
 		}
 		out, e := runCommand(ctx, source, nil, provider.name, "--version")
 		if e != nil {
+			var exit *exec.ExitError
+			var invocation *exec.Error
+			if errors.As(e, &exit) || errors.As(e, &invocation) {
+				return stop("blocked", fmt.Sprintf("%s version check failed: %v", provider.name, e))
+			}
 			return r, e
 		}
 		r.ProviderVersions[provider.name] = strings.TrimSpace(string(out))
